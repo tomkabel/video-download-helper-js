@@ -195,7 +195,7 @@
     console.log(
       '%c To copy URL:%c',
       'font-weight: bold;',
-      `\n   copy(VHSHELPER_CAPTURES[${entry.id - 1}].url)\n`
+      `\n   copy(VHSHELPER_CAPTURES.find(c => c.id === ${entry.id})?.url)\n`
     );
 
     console.groupEnd();
@@ -209,11 +209,16 @@
     /** @type {{ id: number, url: string, type: string, label: string, contentType: string, headers: Record<string,string>, timestamp: number, source: string, pageUrl: string }[]} */
     Object.defineProperty(window, 'VHSHELPER_CAPTURES', {
       get: () => [...CAPTURE_STORE],
-      configurable: false,
+      configurable: true,
     });
 
     /** Dump all captures as a JSON download */
     window.VHSHELPER_DUMP = () => {
+      console.warn(
+        '%c WARNING: %cExported file may contain sensitive credentials (authorization tokens, cookies, session IDs). Handle carefully and do not share publicly.',
+        'font-weight: bold; color: #FF6B35;',
+        'color: #FFD600;'
+      );
       const blob = new Blob([JSON.stringify(CAPTURE_STORE, null, 2)], { type: 'application/json' });
       const url  = URL.createObjectURL(blob);
       const a    = document.createElement('a');
@@ -253,8 +258,8 @@
       try {
         response = await _fetch.call(this, input, init);
       } catch (_err) {
-        // Passthrough — do not alter behavior on network errors
-        return _fetch.call(this, input, init);
+        // Passthrough — rethrow original error without retry
+        throw _err;
       }
 
       // Only intercept successful responses
