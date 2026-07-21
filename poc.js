@@ -19,12 +19,15 @@
   const MAX_STORE_SIZE = 50;
   const SEEN_URLS = new Set();
 
-  /** Deduplicated push with LRU eviction */
+  /** Deduplicated push with FIFO eviction */
   const pushCapture = (entry) => {
     const key = `${entry.url}|${entry.type}`;
     if (SEEN_URLS.has(key)) return;
     SEEN_URLS.add(key);
-    if (CAPTURE_STORE.length >= MAX_STORE_SIZE) CAPTURE_STORE.shift();
+    if (CAPTURE_STORE.length >= MAX_STORE_SIZE) {
+      const evicted = CAPTURE_STORE.shift();
+      SEEN_URLS.delete(`${evicted.url}|${evicted.type}`);
+    }
     CAPTURE_STORE.push(entry);
   };
 
